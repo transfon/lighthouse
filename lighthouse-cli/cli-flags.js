@@ -196,6 +196,8 @@ function getFlags(...manualArgv) {
     'skipAudits',
   ];
   arrayKeysThatSupportCsv.forEach(key => {
+    // If a key is defined as an array in yargs, the value (if provided)
+    // will always be a string array.
     const input = /** @type {string[]} */ (argv[key]);
     if (input) {
       argv[key] = flatten(input.map(value => value.split(',')));
