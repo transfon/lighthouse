@@ -12,7 +12,8 @@ const pkg = require('../package.json');
 const printer = require('./printer');
 
 /**
- * @param {(string | string[])[]} arr
+ * Remove in Node 11 - [].flatMap
+ * @param {Array<Array<string>>} arr
  * @return {string[]}
  */
 function flatten(arr) {
@@ -36,9 +37,6 @@ function getFlags(...manualArgv) {
       .example(
           'lighthouse <url> --view', 'Opens the HTML report in a browser after the run completes')
       .example(
-          'lighthouse <url> --only-categories=performance,pwa',
-          'Only run specific categories.')
-      .example(
           'lighthouse <url> --config-path=./myconfig.js',
           'Runs Lighthouse with your own configuration: custom audits, report generation, etc.')
       .example(
@@ -59,6 +57,9 @@ function getFlags(...manualArgv) {
       .example(
           'lighthouse <url> --extra-headers=./path/to/file.json',
           'Path to JSON file of HTTP Header key/value pairs to send in requests')
+      .example(
+          'lighthouse <url> --only-categories=performance,pwa',
+          'Only run specific categories.')
 
       // List of options
       .group(['verbose', 'quiet'], 'Logging:')
