@@ -108,7 +108,7 @@ module.exports = [
         'uses-responsive-images': {
           displayValue: 'Potential savings of 69\xa0KB',
           details: {
-            overallSavingsBytes: '>75000',
+            overallSavingsBytes: '>65000',
             items: {
               0: {wastedPercent: '<60'},
               1: {wastedPercent: '<60'},
