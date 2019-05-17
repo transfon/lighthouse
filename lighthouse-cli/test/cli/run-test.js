@@ -39,12 +39,8 @@ describe('CLI run', function() {
       const timeoutFlag = `--max-wait-for-load=${9000}`;
       const pluginsFlag = '--plugins=lighthouse-plugin-simple';
 
-      const flags = getFlags(
-        '--output=json',
-         `--output-path=${filename}`,
-        pluginsFlag,
-        timeoutFlag,
-        url);
+      // eslint-disable-next-line max-len
+      const flags = getFlags(`--output=json --output-path=${filename} ${pluginsFlag} ${timeoutFlag} ${url}`);
 
       const rawResult = await run.runLighthouse(url, flags, fastConfig);
 
@@ -94,7 +90,7 @@ describe('CLI run', function() {
 
 describe('flag coercing', () => {
   it('should force to array', () => {
-    assert.deepStrictEqual(getFlags('--only-audits=foo', 'chrome://version').onlyAudits, ['foo']);
+    assert.deepStrictEqual(getFlags(`--only-audits foo chrome://version`).onlyAudits, ['foo']);
   });
 });
 
