@@ -27,8 +27,9 @@ function flatten(arr) {
  * @return {LH.CliFlags}
  */
 function getFlags(manualArgv) {
-  // @ts-ignore yargs() is incorrectly typed as not returning itself
+  // @ts-ignore yargs() is incorrectly typed as not accepting a single string.
   const y = manualArgv ? yargs(manualArgv) : yargs;
+  // Intentionally left as type `any` because @types/yargs doesn't chain correctly.
   const argv = y.help('help')
       .version(() => pkg.version)
       .showHelpOnFail(false, 'Specify --help for available options')
@@ -201,7 +202,7 @@ function getFlags(manualArgv) {
     // since assigning back to argv as string[] would be unsound for enums,
     // for example: output is LH.OutputMode[].
     const input = argv[key];
-    // Existence check + convinces TS that this is an array.
+    // Truthy check is necessary. isArray convinces TS that this is an array.
     if (Array.isArray(input)) {
       argv[key] = flatten(input.map(value => value.split(',')));
     }
