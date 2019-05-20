@@ -16,14 +16,24 @@
  */
 'use strict';
 
+/* eslint-env browser */
+
 /**
  * @fileoverview Adds export button, print, and other dynamic functionality to
  * the report.
  */
 
-/* globals self URL Blob CustomEvent getFilenamePrefix window */
+/* globals getFilenamePrefix Util */
 
 /** @typedef {import('./dom.js')} DOM */
+
+/**
+ * @param {HTMLTableElement} tableEl
+ * @return {Array<HTMLTableRowElement>}
+ */
+function getTableRows(tableEl) {
+  return Array.from(tableEl.tBodies[0].rows);
+}
 
 class ReportUIFeatures {
   /**
@@ -72,17 +82,41 @@ class ReportUIFeatures {
 
     this.json = report;
     this._setupMediaQueryListeners();
-    this._setupSmoothScroll();
     this._setupExportButton();
-    this._setupStickyHeaderElements();
+    this._setupThirdPartyFilter();
     this._setUpCollapseDetailsAfterPrinting();
     this._resetUIState();
     this._document.addEventListener('keyup', this.onKeyUp);
     this._document.addEventListener('copy', this.onCopy);
-    this._document.addEventListener('scroll', this._updateStickyHeaderOnScroll);
-    window.addEventListener('resize', this._updateStickyHeaderOnScroll);
     const topbarLogo = this._dom.find('.lh-topbar__logo', this._document);
-    topbarLogo.addEventListener('click', this._toggleDarkTheme);
+    topbarLogo.addEventListener('click', () => this._toggleDarkTheme());
+
+    let turnOffTheLights = false;
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      turnOffTheLights = true;
+    }
+
+    // Fireworks.
+    const scoresAll100 = Object.values(report.categories).every(cat => cat.score === 1);
+    if (!this._dom.isDevTools() && scoresAll100) {
+      turnOffTheLights = true;
+      const scoresContainer = this._dom.find('.lh-scores-container', this._document);
+      scoresContainer.classList.add('score100');
+      scoresContainer.addEventListener('click', _ => {
+        scoresContainer.classList.toggle('fireworks-paused');
+      });
+    }
+
+    if (turnOffTheLights) {
+      this._toggleDarkTheme(true);
+    }
+
+    // There is only a sticky header when at least 2 categories are present.
+    if (Object.keys(this.json.categories).length >= 2) {
+      this._setupStickyHeaderElements();
+      this._document.addEventListener('scroll', this._updateStickyHeaderOnScroll);
+      window.addEventListener('resize', this._updateStickyHeaderOnScroll);
+    }
   }
 
   /**
@@ -103,17 +137,6 @@ class ReportUIFeatures {
     this.onMediaQueryChange(mediaQuery);
   }
 
-  _setupSmoothScroll() {
-    for (const el of this._dom.findAll('a.lh-gauge__wrapper', this._document)) {
-      const anchorElement = /** @type {HTMLAnchorElement} */ (el);
-      anchorElement.addEventListener('click', e => {
-        e.preventDefault();
-        window.history.pushState({}, '', anchorElement.hash);
-        this._dom.find(anchorElement.hash, this._document).scrollIntoView({behavior: 'smooth'});
-      });
-    }
-  }
-
   /**
    * Handle media query change events.
    * @param {MediaQueryList|MediaQueryListEvent} mql
@@ -129,6 +152,102 @@ class ReportUIFeatures {
 
     const dropdown = this._dom.find('.lh-export__dropdown', this._document);
     dropdown.addEventListener('click', this.onExport);
+  }
+
+  _setupThirdPartyFilter() {
+    // Some audits should not display the third party filter option.
+    const thirdPartyFilterAuditExclusions = [
+      // This audit deals explicitly with third party resources.
+      'uses-rel-preconnect',
+    ];
+
+    // Get all tables with a text url column.
+    /** @type {Array<HTMLTableElement>} */
+    const tables = Array.from(this._document.querySelectorAll('.lh-table'));
+    const tablesWithUrls = tables
+      .filter(el => el.querySelector('td.lh-table-column--url'))
+      .filter(el => {
+        const containingAudit = el.closest('.lh-audit');
+        if (!containingAudit) throw new Error('.lh-table not within audit');
+        return !thirdPartyFilterAuditExclusions.includes(containingAudit.id);
+      });
+
+    tablesWithUrls.forEach((tableEl, index) => {
+      const urlItems = this._getUrlItems(tableEl);
+      const thirdPartyRows = this._getThirdPartyRows(tableEl, urlItems, this.json.finalUrl);
+      // If all or none of the rows are 3rd party, no checkbox!
+      if (thirdPartyRows.size === urlItems.length || !thirdPartyRows.size) return;
+
+      // create input box
+      const filterTemplate = this._dom.cloneTemplate('#tmpl-lh-3p-filter', this._document);
+      const filterInput = this._dom.find('input', filterTemplate);
+      const id = `lh-3p-filter-label--${index}`;
+
+      filterInput.id = id;
+      filterInput.addEventListener('change', e => {
+        // Remove rows from the dom and keep track of them to readd on uncheck.
+        // Why removing instead of hiding? To keep nth-child(even) background-colors working.
+        if (e.target instanceof HTMLInputElement && !e.target.checked) {
+          for (const row of thirdPartyRows.values()) {
+            row.remove();
+          }
+        } else {
+          // Add row elements back to original positions.
+          for (const [position, row] of thirdPartyRows.entries()) {
+            const childrenArr = getTableRows(tableEl);
+            tableEl.tBodies[0].insertBefore(row, childrenArr[position]);
+          }
+        }
+      });
+
+      this._dom.find('label', filterTemplate).setAttribute('for', id);
+      this._dom.find('.lh-3p-filter-count', filterTemplate).textContent =
+          `${thirdPartyRows.size}`;
+      this._dom.find('.lh-3p-ui-string', filterTemplate).textContent =
+          Util.UIStrings.thirdPartyResourcesLabel;
+
+      // Finally, add checkbox to the DOM.
+      if (!tableEl.parentNode) return; // Keep tsc happy.
+      tableEl.parentNode.insertBefore(filterTemplate, tableEl);
+    });
+  }
+
+  /**
+   * From a table with URL entries, finds the rows containing third-party URLs
+   * and returns a Map of those rows, mapping from row index to row Element.
+   * @param {HTMLTableElement} el
+   * @param {string} finalUrl
+   * @param {Array<HTMLElement>} urlItems
+   * @return {Map<number, HTMLTableRowElement>}
+   */
+  _getThirdPartyRows(el, urlItems, finalUrl) {
+    const finalUrlRootDomain = Util.getRootDomain(finalUrl);
+
+    /** @type {Map<number, HTMLTableRowElement>} */
+    const thirdPartyRows = new Map();
+    for (const urlItem of urlItems) {
+      const datasetUrl = urlItem.dataset.url;
+      if (!datasetUrl) continue;
+      const isThirdParty = Util.getRootDomain(datasetUrl) !== finalUrlRootDomain;
+      if (!isThirdParty) continue;
+
+      const urlRowEl = urlItem.closest('tr');
+      if (urlRowEl) {
+        const rowPosition = getTableRows(el).indexOf(urlRowEl);
+        thirdPartyRows.set(rowPosition, urlRowEl);
+      }
+    }
+
+    return thirdPartyRows;
+  }
+
+  /**
+   * From a table, finds and returns URL items.
+   * @param {HTMLTableElement} tableEl
+   * @return {Array<HTMLElement>}
+   */
+  _getUrlItems(tableEl) {
+    return this._dom.findAll('.lh-text__url', tableEl);
   }
 
   _setupStickyHeaderElements() {
@@ -206,8 +325,7 @@ class ReportUIFeatures {
    */
   onExportButtonClick(e) {
     e.preventDefault();
-    const el = /** @type {Element} */ (e.target);
-    el.classList.toggle('active');
+    this.exportButton.classList.toggle('active');
     this._document.addEventListener('keydown', this.onKeyDown);
   }
 
@@ -271,6 +389,10 @@ class ReportUIFeatures {
       }
       case 'save-gist': {
         this.saveAsGist();
+        break;
+      }
+      case 'toggle-dark': {
+        this._toggleDarkTheme();
         break;
       }
     }
@@ -420,9 +542,10 @@ class ReportUIFeatures {
 
   /**
    * @private
+   * @param {boolean} [force]
    */
-  _toggleDarkTheme() {
-    this._document.body.classList.toggle('dark');
+  _toggleDarkTheme(force) {
+    this._document.body.classList.toggle('dark', force);
   }
 
   _updateStickyHeaderOnScroll() {

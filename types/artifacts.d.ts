@@ -17,7 +17,11 @@ declare global {
   module LH {
     export interface Artifacts extends BaseArtifacts, GathererArtifacts {}
 
-    /** Artifacts always created by GatherRunner. */
+    /**
+     * Artifacts always created by GatherRunner. These artifacts are available to Lighthouse plugins.
+     * NOTE: any breaking changes here are considered breaking Lighthouse changes that must be done
+     * on a major version bump.
+     */
     export interface BaseArtifacts {
       /** The ISO-8601 timestamp of when the test page was fetched and artifacts collected. */
       fetchTime: string;
@@ -141,6 +145,7 @@ declare global {
             snippet: string;
             target: string[];
             failureSummary?: string;
+            nodeLabel?: string;
           }[];
         }[];
         notApplicable: {
@@ -333,11 +338,12 @@ declare global {
       }
 
       export interface TapTarget {
-        snippet: string,
-        selector: string,
-        path: string,
-        href: string,
-        clientRects: Rect[]
+        snippet: string;
+        selector: string;
+        nodeLabel?: string;
+        path: string;
+        href: string;
+        clientRects: Rect[];
       }
 
       export interface ViewportDimensions {
