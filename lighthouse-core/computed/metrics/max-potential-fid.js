@@ -9,7 +9,7 @@ const makeComputedArtifact = require('../computed-artifact.js');
 const MetricArtifact = require('./metric');
 const LanternMaxPotentialFID = require('./lantern-max-potential-fid.js');
 const LHError = require('../../lib/lh-error');
-const TracingProcessor = require('../../lib/traces/tracing-processor');
+const TracingProcessor = require('../../lib/tracehouse/tracing-processor');
 
 class MaxPotentialFID extends MetricArtifact {
   /**
