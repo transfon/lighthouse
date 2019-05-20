@@ -255,22 +255,39 @@ async function saveAssets(artifacts, audits, pathWithBasename) {
  * Log trace(s) and associated devtoolsLog(s) to console.
  * @param {LH.Artifacts} artifacts
  * @param {LH.Audit.Results} audits
- * @return {Promise<void>}
+ * @return {Promise<Array<{name: string, contents: string}>>}
  */
-async function logAssets(artifacts, audits) {
+async function prepareAssetsForLogging(artifacts, audits) {
+  /** @type {Array<{name: string, contents: string}>} */
+  const assetsToLog = [];
+
   const allAssets = await prepareAssets(artifacts, audits);
   allAssets.map(passAssets => {
-    const dtlogdata = JSON.stringify(passAssets.devtoolsLog);
-    // eslint-disable-next-line no-console
-    console.log(`loggedAsset %%% devtoolslog-${passAssets.passName}.json %%% ${dtlogdata}`);
+    assetsToLog.push({
+      name: `devtoolslog-${passAssets.passName}.json`,
+      contents: JSON.stringify(passAssets.devtoolsLog),
+    });
     const traceIter = traceJsonGenerator(passAssets.traceData);
-    let traceJson = '';
-    for (const trace of traceIter) {
-      traceJson += trace;
-    }
-    // eslint-disable-next-line no-console
-    console.log(`loggedAsset %%% trace-${passAssets.passName}.json %%% ${traceJson}`);
+    const traceJson = [...traceIter].join();
+    assetsToLog.push({
+      name: `trace-${passAssets.passName}.json`,
+      contents: traceJson,
+    });
   });
+
+  return assetsToLog;
+}
+
+
+/**
+ * Log trace(s) and associated devtoolsLog(s) to console.
+ * @param {Array<{name: string, contents: string}>} assetsToLog
+ */
+function logAssets(assetsToLog) {
+  for (const asset of assetsToLog) {
+    // eslint-disable-next-line no-console
+    console.log(`loggedAsset %%% ${asset.name} %%% ${asset.contents}`);
+  }
 }
 
 /**
@@ -291,6 +308,7 @@ module.exports = {
   loadArtifacts,
   saveAssets,
   prepareAssets,
+  prepareAssetsForLogging,
   saveTrace,
   logAssets,
   saveLanternNetworkData,

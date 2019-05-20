@@ -55,12 +55,22 @@ async function runLighthouseInLR(connection, url, flags, lrOpts) {
     const results = await lighthouse(url, flags, config, connection);
     if (!results) return;
 
+    let assetsToLog;
     if (logAssets) {
-      await assetSaver.logAssets(results.artifacts, results.lhr.audits);
+      assetsToLog = await assetSaver.prepareAssetsForLogging(results.artifacts, results.lhr.audits);
+      assetSaver.logAssets(assetsToLog);
     }
 
     // pre process the LHR for proto
     if (flags.output === 'json' && typeof results.report === 'string') {
+      // When LR is called with |internal: {keep_raw_response: true, save_lighthouse_assets: true}|,
+      // this code will log assets to raw_response.assets.
+      if (logAssets) {
+        const reportJson = JSON.parse(results.report);
+        reportJson.assets = assetsToLog;
+        results.report = JSON.stringify(reportJson);
+      }
+
       return preprocessor.processForProto(results.report);
     }
 
