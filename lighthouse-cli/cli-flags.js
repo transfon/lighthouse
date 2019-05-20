@@ -186,7 +186,7 @@ function getFlags(manualArgv) {
       .wrap(yargs.terminalWidth())
       .argv;
 
-  // ".middleware" does not exist in this version of yargs, so do some post-processing here.
+  // Support comma-separated values for some array flags by splitting on any ',' found.
   /** @type {Array<keyof LH.CliFlags>} */
   const arrayKeysThatSupportCsv = [
     'onlyAudits',
