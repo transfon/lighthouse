@@ -52,29 +52,29 @@ async function runLighthouseInLR(connection, url, flags, lrOpts) {
   }
 
   try {
-    const results = await lighthouse(url, flags, config, connection);
-    if (!results) return;
+    const runnerResult = await lighthouse(url, flags, config, connection);
+    if (!runnerResult) return;
 
-    let assetsToLog;
     if (logAssets) {
-      assetsToLog = await assetSaver.prepareAssetsForLogging(results.artifacts, results.lhr.audits);
+      const assetsToLog =
+        await assetSaver.prepareAssetsForLogging(runnerResult.artifacts, runnerResult.lhr.audits);
       assetSaver.logAssets(assetsToLog);
     }
 
     // pre process the LHR for proto
-    if (flags.output === 'json' && typeof results.report === 'string') {
+    if (flags.output === 'json' && typeof runnerResult.report === 'string') {
       // When LR is called with |internal: {keep_raw_response: true, save_lighthouse_assets: true}|,
-      // this code will log assets to raw_response.assets.
+      // this code will log artifacts to raw_response.artifacts.
       if (logAssets) {
-        const reportJson = JSON.parse(results.report);
-        reportJson.assets = assetsToLog;
-        results.report = JSON.stringify(reportJson);
+        const reportObj = JSON.parse(runnerResult.report);
+        reportObj.artifacts = runnerResult.artifacts;
+        runnerResult.report = JSON.stringify(reportObj);
       }
 
-      return preprocessor.processForProto(results.report);
+      return preprocessor.processForProto(runnerResult.report);
     }
 
-    return results.report;
+    return runnerResult.report;
   } catch (err) {
     // If an error ruined the entire lighthouse run, attempt to return a meaningful error.
     let runtimeError;
