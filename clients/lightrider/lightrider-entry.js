@@ -56,9 +56,7 @@ async function runLighthouseInLR(connection, url, flags, lrOpts) {
     if (!runnerResult) return;
 
     if (logAssets) {
-      const assetsToLog =
-        await assetSaver.prepareAssetsForLogging(runnerResult.artifacts, runnerResult.lhr.audits);
-      assetSaver.logAssets(assetsToLog);
+      await assetSaver.logAssets(runnerResult.artifacts, runnerResult.lhr.audits);
     }
 
     // pre process the LHR for proto
