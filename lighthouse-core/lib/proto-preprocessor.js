@@ -16,7 +16,7 @@ const fs = require('fs');
  */
 
 /**
-  * Transform an LHR into a proto-friendly LHR
+  * Transform an LHR into a proto-friendly, mostly-compatible LHR.
   * @param {LH.Result} lhr
   * @return {LH.Result}
   */
