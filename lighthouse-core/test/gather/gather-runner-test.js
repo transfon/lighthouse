@@ -126,11 +126,11 @@ describe('GatherRunner', function() {
     const passContext = {
       url,
       settings: {},
-      passConfig: {},
+      passConfig: {gatherers: []},
     };
 
-    const {pageLoadError} = await GatherRunner.loadPage(driver, passContext);
-    expect(pageLoadError).toEqual(error);
+    const {navigationError} = await GatherRunner.loadPage(driver, passContext);
+    expect(navigationError).toEqual(error);
     expect(passContext.url).toEqual(url);
   });
 
@@ -418,6 +418,73 @@ describe('GatherRunner', function() {
     assert.equal(tests.calledCleanBrowserCaches, true);
   });
 
+  it('fails artifacts with network errors', async () => {
+    const requestedUrl = 'https://example.com';
+    // This page load error should be overriden by NO_DOCUMENT_REQUEST for being more specific
+    const navigationError = new LHError(LHError.errors.NO_FCP);
+    const driver = Object.assign({}, fakeDriver, {
+      online: true,
+      gotoURL: url => url.includes('blank') ? null : Promise.reject(navigationError),
+    });
+
+    const passConfig = {
+      gatherers: [
+        {instance: new TestGatherer()},
+      ],
+    };
+
+    const settings = {};
+
+    const passContext = {
+      url: requestedUrl,
+      driver,
+      passConfig,
+      settings,
+      LighthouseRunWarnings: [],
+      baseArtifacts: await GatherRunner.initializeBaseArtifacts({driver, settings, requestedUrl})
+    };
+
+    const {artifacts} = await GatherRunner.runPass(passContext);
+    expect(passContext.LighthouseRunWarnings).toHaveLength(1);
+    expect(artifacts.TestGatherer).toBeInstanceOf(Error);
+    expect(artifacts.TestGatherer.code).toEqual('NO_DOCUMENT_REQUEST');
+  });
+
+  it('fails artifacts with navigation errors', async () => {
+    const requestedUrl = 'https://example.com';
+    // This time, NO_FCP should win because it's the only error left.
+    const navigationError = new LHError(LHError.errors.NO_FCP);
+    const driver = Object.assign({}, fakeDriver, {
+      online: true,
+      gotoURL: url => url.includes('blank') ? null : Promise.reject(navigationError),
+      endDevtoolsLog() {
+        return networkRecordsToDevtoolsLog([{url: requestedUrl}]);
+      },
+    });
+
+    const passConfig = {
+      gatherers: [
+        {instance: new TestGatherer()},
+      ],
+    };
+
+    const settings = {};
+
+    const passContext = {
+      url: requestedUrl,
+      driver,
+      passConfig,
+      settings,
+      LighthouseRunWarnings: [],
+      baseArtifacts: await GatherRunner.initializeBaseArtifacts({driver, settings, requestedUrl})
+    };
+
+    const {artifacts} = await GatherRunner.runPass(passContext);
+    expect(passContext.LighthouseRunWarnings).toHaveLength(1);
+    expect(artifacts.TestGatherer).toBeInstanceOf(Error);
+    expect(artifacts.TestGatherer.code).toEqual('NO_FCP');
+  });
+
   it('does not clear origin storage with flag --disable-storage-reset', () => {
     const asyncFunc = () => Promise.resolve();
     const tests = {
@@ -608,48 +675,6 @@ describe('GatherRunner', function() {
       assert.equal(calledDevtoolsLogCollect, true);
       assert.strictEqual(passData.devtoolsLog[0], fakeDevtoolsMessage);
     });
-  });
-
-  it('fails artifacts with page load errors', async () => {
-    const url = 'https://example.com';
-    const driver = Object.assign({}, fakeDriver, {online: true});
-    // This page load error should be overriden by NO_DOCUMENT_REQUEST for being more specific
-    const pageLoadError = new LHError(LHError.errors.NO_FCP);
-
-    const passConfig = {
-      gatherers: [
-        {instance: new TestGatherer()},
-      ],
-    };
-
-    const gathererResults = {TestGatherer: [pageLoadError]};
-    await GatherRunner.afterPass({url, driver, passConfig}, gathererResults);
-    expect(gathererResults.TestGatherer).toHaveLength(1);
-    await expect(gathererResults.TestGatherer[0]).rejects.toHaveProperty('code',
-      'NO_DOCUMENT_REQUEST');
-  });
-
-  it('fails artifacts with previous page load errors', async () => {
-    const url = 'https://example.com';
-    const driver = Object.assign({}, fakeDriver, {
-      online: true,
-      endDevtoolsLog() {
-        return networkRecordsToDevtoolsLog([{url}]);
-      },
-    });
-
-    const pageLoadError = new LHError(LHError.errors.NO_FCP);
-
-    const passConfig = {
-      gatherers: [
-        {instance: new TestGatherer()},
-      ],
-    };
-
-    const gathererResults = {TestGatherer: [pageLoadError]};
-    await GatherRunner.afterPass({url, driver, passConfig, pageLoadError}, gathererResults);
-    expect(gathererResults.TestGatherer).toHaveLength(1);
-    await expect(gathererResults.TestGatherer[0]).rejects.toEqual(pageLoadError);
   });
 
   it('does as many passes as are required', () => {
