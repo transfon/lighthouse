@@ -1115,7 +1115,7 @@
                         "name": "WordPress"
                     }
                 ],
-                "summary": {},
+                "summary": null,
                 "type": "table"
             },
             "id": "js-libraries",
@@ -1247,7 +1247,7 @@
             "details": {
                 "headings": [],
                 "items": [],
-                "summary": {},
+                "summary": null,
                 "type": "table"
             },
             "id": "link-text",
@@ -1903,7 +1903,7 @@
                         "vulnCount": 2.0
                     }
                 ],
-                "summary": {},
+                "summary": null,
                 "type": "table"
             },
             "displayValue": "2 vulnerabilities detected",

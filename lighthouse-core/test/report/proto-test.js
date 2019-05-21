@@ -14,49 +14,8 @@ const preprocessor = require('../../lib/proto-preprocessor.js');
 
 /* eslint-env jest */
 
-describe('round trip JSON comparison subsets', () => {
+describe('proto test', () => {
   let sampleJson;
-
-  beforeEach(() => {
-    sampleJson = JSON.parse(preprocessor.processForProto(sample));
-  });
-
-  it('has the same audit results and details (if applicable)', () => {
-    for (const auditId of Object.keys(sampleJson.audits)) {
-      expect(roundTripJson.audits[auditId]).toEqual(sampleJson.audits[auditId]);
-    }
-  });
-
-  it('has the same i18n rendererFormattedStrings', () => {
-    expect(roundTripJson.i18n).toMatchObject(sampleJson.i18n);
-  });
-
-  it('has the same top level values', () => {
-    // Don't test all top level properties that are objects.
-    Object.keys(sampleJson).forEach(audit => {
-      if (typeof sampleJson[audit] === 'object' && !Array.isArray(sampleJson[audit])) {
-        delete sampleJson[audit];
-      }
-    });
-
-    // Properties set to their type's default value will be omitted in the roundTripJson.
-    // For an explicit list of properties, remove sampleJson values if set to a default.
-    if (Array.isArray(sampleJson.stackPacks) && sampleJson.stackPacks.length === 0) {
-      delete sampleJson.stackPacks;
-    }
-
-    expect(roundTripJson).toMatchObject(sampleJson);
-  });
-
-  it('has the same config values', () => {
-    // Config settings from proto round trip should be a subset of the actual settings.
-    expect(sampleJson.configSettings).toMatchObject(roundTripJson.configSettings);
-  });
-});
-
-describe('round trip JSON comparison to everything', () => {
-  let sampleJson;
-
   beforeEach(() => {
     sampleJson = JSON.parse(preprocessor.processForProto(sample));
 
@@ -70,7 +29,43 @@ describe('round trip JSON comparison to everything', () => {
     }
   });
 
-  it('has the same JSON overall', () => {
-    expect(sampleJson).toMatchObject(roundTripJson);
+  describe('round trip JSON comparison subsets', () => {
+    it('has the same audit results and details (if applicable)', () => {
+      for (const auditId of Object.keys(sampleJson.audits)) {
+        expect(roundTripJson.audits[auditId]).toEqual(sampleJson.audits[auditId]);
+      }
+    });
+
+    it('has the same i18n rendererFormattedStrings', () => {
+      expect(roundTripJson.i18n).toMatchObject(sampleJson.i18n);
+    });
+
+    it('has the same top level values', () => {
+      // Don't test all top level properties that are objects.
+      Object.keys(sampleJson).forEach(audit => {
+        if (typeof sampleJson[audit] === 'object' && !Array.isArray(sampleJson[audit])) {
+          delete sampleJson[audit];
+        }
+      });
+
+      // Properties set to their type's default value will be omitted in the roundTripJson.
+      // For an explicit list of properties, remove sampleJson values if set to a default.
+      if (Array.isArray(sampleJson.stackPacks) && sampleJson.stackPacks.length === 0) {
+        delete sampleJson.stackPacks;
+      }
+
+      expect(roundTripJson).toMatchObject(sampleJson);
+    });
+
+    it('has the same config values', () => {
+      // Config settings from proto round trip should be a subset of the actual settings.
+      expect(sampleJson.configSettings).toMatchObject(roundTripJson.configSettings);
+    });
+  });
+
+  describe('round trip JSON comparison to everything', () => {
+    it('has the same JSON overall', () => {
+      expect(sampleJson).toMatchObject(roundTripJson);
+    });
   });
 });
