@@ -78,10 +78,10 @@ Configuration:
   --audit-mode, -A               Process saved artifacts from disk                                                                         [boolean]
 
 Output:
-  --output       Reporter for the results, supports multiple values                        [choices: "csv", "json", "html"] [default: "html"]
+  --output       Reporter for the results, supports multiple values                        [choices: "json", "html", "csv"] [default: "html"]
   --output-path  The file path to output the results. Use 'stdout' to write to stdout.
-                 If using JSON or CSV output, default is stdout.
-                 If using HTML output, default is a file in the working directory with a name based on the test URL and date.
+                 If using JSON output, default is stdout.
+                 If using HTML or CSV output, default is a file in the working directory with a name based on the test URL and date.
                  If using multiple outputs, --output-path is appended with the standard extension for each output type. "reports/my-run" -> "reports/my-run.report.html", "reports/my-run.report.json", etc.
                  Example: --output-path=./lighthouse-results.html
   --view         Open HTML report in your browser                                                                                          [boolean]
@@ -201,12 +201,14 @@ Useful documentation, examples, and recipes to get you started.
 - [Dealing with variance](./docs/variability.md)
 - [Using Lighthouse programmatically](./docs/readme.md#using-programmatically)
 - [Testing a site with authentication](./docs/readme.md#testing-on-a-site-with-authentication)
+- [Developing Plugins](./docs/plugins.md)
 - [Testing on a mobile device](./docs/readme.md#testing-on-a-mobile-device)
 - [Lighthouse Architecture](./docs/architecture.md)
 
 **Recipes**
 
 - [gulp](docs/recipes/gulp) - helpful for CI integration
+- [Plugin](./docs/recipes/plugin) - example Lighthouse plugin
 - [Custom Audit example](./docs/recipes/custom-audit) - extend Lighthouse, run your own audits
 
 **Videos**
@@ -238,6 +240,8 @@ cd lighthouse
 yarn
 yarn build-all
 ```
+
+If changing audit output, you'll likely also need to have the protocol-buffer compiler installed. See the [official installation instructions](https://github.com/protocolbuffers/protobuf#protocol-compiler-installation) or consult your [favorite package manager](https://formulae.brew.sh/formula/protobuf) for your OS.
 
 ### Run
 
@@ -312,7 +316,7 @@ Other awesome open source projects that use Lighthouse.
 * **[lighthouse4u](https://github.com/godaddy/lighthouse4u)** - LH4U provides Google Lighthouse as a service, surfaced by both a friendly UI+API, and backed by Elastic Search for easy querying and visualization.
 * **[lighthouse-gh-reporter](https://github.com/carlesnunez/lighthouse-gh-reporter)** - Run Lighthouse in CI and report back in a comment on your pull requests
 * **[react-lighthouse-viewer](https://www.npmjs.com/package/react-lighthouse-viewer)** - Render a Lighthouse JSON report in a React Component.
-
+* **[performance-budgets](https://performance-budgets.netlify.com/)** - Easily assert Lighthouse budgets with Docker.
 ## FAQ
 
 ### How does Lighthouse work?

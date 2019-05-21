@@ -251,6 +251,7 @@ function targetToTableNode(target) {
     snippet: target.snippet,
     path: target.path,
     selector: target.selector,
+    nodeLabel: target.nodeLabel,
   };
 }
 
@@ -283,7 +284,7 @@ class TapTargets extends Audit {
       };
     }
 
-    const viewportMeta = await ComputedViewportMeta.request(artifacts, context);
+    const viewportMeta = await ComputedViewportMeta.request(artifacts.MetaElements, context);
     if (!viewportMeta.isMobileOptimized) {
       return {
         score: 0,

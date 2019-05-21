@@ -53,13 +53,12 @@ class PerformanceCategoryRenderer extends CategoryRenderer {
 
   /**
    * @param {LH.ReportResult.AuditRef} audit
-   * @param {number} index
    * @param {number} scale
    * @return {Element}
    */
-  _renderOpportunity(audit, index, scale) {
+  _renderOpportunity(audit, scale) {
     const oppTmpl = this.dom.cloneTemplate('#tmpl-lh-opportunity', this.templateContext);
-    const element = this.populateAuditValues(audit, index, oppTmpl);
+    const element = this.populateAuditValues(audit, oppTmpl);
     element.id = audit.result.id;
 
     if (!audit.result.details || audit.result.scoreDisplayMode === 'error') {
@@ -123,9 +122,14 @@ class PerformanceCategoryRenderer extends CategoryRenderer {
       element.appendChild(this.renderCategoryHeader(category, groups));
     }
 
-    // Metrics
+    // Metrics.
     const metricAudits = category.auditRefs.filter(audit => audit.group === 'metrics');
     const metricAuditsEl = this.renderAuditGroup(groups.metrics);
+
+    // Metric descriptions toggle.
+    const toggleTmpl = this.dom.cloneTemplate('#tmpl-lh-metrics-toggle', this.templateContext);
+    const toggleEl = this.dom.find('.lh-metrics-toggle', toggleTmpl);
+    metricAuditsEl.prepend(...toggleEl.childNodes);
 
     const keyMetrics = metricAudits.filter(a => a.weight >= 3);
     const otherMetrics = metricAudits.filter(a => a.weight < 3);
@@ -143,8 +147,7 @@ class PerformanceCategoryRenderer extends CategoryRenderer {
 
     // 'Values are estimated and may vary' is used as the category description for PSI
     if (environment !== 'PSI') {
-      const estValuesEl = this.dom.createChildOf(metricsColumn2El, 'div',
-          'lh-metrics__disclaimer lh-metrics__disclaimer');
+      const estValuesEl = this.dom.createChildOf(metricsColumn1El, 'div', 'lh-metrics__disclaimer');
       estValuesEl.textContent = Util.UIStrings.varianceDisclaimer;
     }
 
@@ -159,6 +162,20 @@ class PerformanceCategoryRenderer extends CategoryRenderer {
       timelineEl.id = thumbnailResult.id;
       const filmstripEl = this.detailsRenderer.render(thumbnailResult.details);
       filmstripEl && timelineEl.appendChild(filmstripEl);
+    }
+
+    // Budgets
+    const budgetAudit = category.auditRefs.find(audit => audit.id === 'performance-budget');
+    if (budgetAudit && budgetAudit.result.details) {
+      const table = this.detailsRenderer.render(budgetAudit.result.details);
+      if (table) {
+        table.id = budgetAudit.id;
+        table.classList.add('lh-audit');
+        const budgetsGroupEl = this.renderAuditGroup(groups.budgets);
+        budgetsGroupEl.appendChild(table);
+        budgetsGroupEl.classList.add('lh-audit-group--budgets');
+        element.appendChild(budgetsGroupEl);
+      }
     }
 
     // Opportunities
@@ -182,8 +199,7 @@ class PerformanceCategoryRenderer extends CategoryRenderer {
 
       const headerEl = this.dom.find('.lh-load-opportunity__header', tmpl);
       groupEl.appendChild(headerEl);
-      opportunityAudits.forEach((item, i) =>
-          groupEl.appendChild(this._renderOpportunity(item, i, scale)));
+      opportunityAudits.forEach(item => groupEl.appendChild(this._renderOpportunity(item, scale)));
       groupEl.classList.add('lh-audit-group--load-opportunities');
       element.appendChild(groupEl);
     }
@@ -199,7 +215,7 @@ class PerformanceCategoryRenderer extends CategoryRenderer {
 
     if (diagnosticAudits.length) {
       const groupEl = this.renderAuditGroup(groups['diagnostics']);
-      diagnosticAudits.forEach((item, i) => groupEl.appendChild(this.renderAudit(item, i)));
+      diagnosticAudits.forEach(item => groupEl.appendChild(this.renderAudit(item)));
       groupEl.classList.add('lh-audit-group--diagnostics');
       element.appendChild(groupEl);
     }

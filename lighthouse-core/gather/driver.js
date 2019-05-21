@@ -525,7 +525,14 @@ class Driver {
    * @return {Promise<{url: string, data: string}|null>}
    */
   async getAppManifest() {
-    this.setNextProtocolTimeout(3000);
+    // In all environments but LR, Page.getAppManifest finishes very quickly.
+    // In LR, there is a bug that causes this command to hang until outgoing
+    // requests finish. This has been seen in long polling (where it will never
+    // return) and when other requests take a long time to finish. We allow 10 seconds
+    // for outgoing requests to finish. Anything more, and we continue the run without
+    // a manifest.
+    // Googlers, see: http://b/124008171
+    this.setNextProtocolTimeout(10000);
     let response;
     try {
       response = await this.sendCommand('Page.getAppManifest');
@@ -1337,9 +1344,6 @@ class Driver {
     const uniqueCategories = Array.from(new Set(traceCategories));
 
     // Check any domains that could interfere with or add overhead to the trace.
-    if (this.isDomainEnabled('Debugger')) {
-      throw new Error('Debugger domain enabled when starting trace');
-    }
     if (this.isDomainEnabled('CSS')) {
       throw new Error('CSS domain enabled when starting trace');
     }
@@ -1406,6 +1410,18 @@ class Driver {
   }
 
   /**
+   * Enables `Debugger` domain to receive async stacktrace information on network request initiators.
+   * This is critical for tracing certain performance simulation situations.
+   *
+   * @return {Promise<void>}
+   */
+  async enableAsyncStacks() {
+    await this.sendCommand('Debugger.enable');
+    await this.sendCommand('Debugger.setSkipAllPauses', {skip: true});
+    await this.sendCommand('Debugger.setAsyncCallStackDepth', {maxDepth: 8});
+  }
+
+  /**
    * @param {LH.Config.Settings} settings
    * @return {Promise<void>}
    */
@@ -1460,15 +1476,20 @@ class Driver {
   }
 
   /**
-   * Emulate internet disconnection.
+   * Clear the network cache on disk and in memory.
    * @return {Promise<void>}
    */
-  cleanBrowserCaches() {
+  async cleanBrowserCaches() {
+    const status = {msg: 'Cleaning browser cache', id: 'lh:driver:cleanBrowserCaches'};
+    log.time(status);
+
     // Wipe entire disk cache
-    return this.sendCommand('Network.clearBrowserCache')
-      // Toggle 'Disable Cache' to evict the memory cache
-      .then(_ => this.sendCommand('Network.setCacheDisabled', {cacheDisabled: true}))
-      .then(_ => this.sendCommand('Network.setCacheDisabled', {cacheDisabled: false}));
+    await this.sendCommand('Network.clearBrowserCache');
+    // Toggle 'Disable Cache' to evict the memory cache
+    await this.sendCommand('Network.setCacheDisabled', {cacheDisabled: true});
+    await this.sendCommand('Network.setCacheDisabled', {cacheDisabled: false});
+
+    log.timeEnd(status);
   }
 
   /**
