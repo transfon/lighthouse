@@ -25,9 +25,9 @@ const LR_PRESETS = {
  * If configOverride is provided, lrDevice and categoryIDs are ignored.
  * @param {Connection} connection
  * @param {string} url
- * @param {LH.Flags} flags Lighthouse flags, including `output`
+ * @param {LH.Flags} flags Lighthouse flags
  * @param {{lrDevice?: 'desktop'|'mobile', categoryIDs?: Array<string>, logAssets: boolean, configOverride?: LH.Config.Json}} lrOpts Options coming from Lightrider
- * @return {Promise<string|Array<string>|void>}
+ * @return {Promise<string|void>}
  */
 async function runLighthouseInLR(connection, url, flags, lrOpts) {
   const {lrDevice, categoryIDs, logAssets, configOverride} = lrOpts;
@@ -59,12 +59,8 @@ async function runLighthouseInLR(connection, url, flags, lrOpts) {
       await assetSaver.logAssets(results.artifacts, results.lhr.audits);
     }
 
-    // pre process the LHR for proto
-    if (flags.output === 'json' && typeof results.report === 'string') {
-      return preprocessor.processForProto(results.report);
-    }
-
-    return results.report;
+    const processedLHR = preprocessor.processForProto(results.lhr);
+    return JSON.stringify(processedLHR);
   } catch (err) {
     // If an error ruined the entire lighthouse run, attempt to return a meaningful error.
     let runtimeError;
