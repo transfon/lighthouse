@@ -7,7 +7,6 @@
 
 const lighthouse = require('../../lighthouse-core/index.js');
 
-const assetSaver = require('../../lighthouse-core/lib/asset-saver.js');
 const LHError = require('../../lighthouse-core/lib/lh-error.js');
 const preprocessor = require('../../lighthouse-core/lib/proto-preprocessor.js');
 
@@ -60,9 +59,9 @@ async function runLighthouseInLR(connection, url, flags, lrOpts) {
       // When LR is called with |internal: {keep_raw_response: true, save_lighthouse_assets: true}|,
       // this code will log artifacts to raw_response.artifacts.
       if (logAssets) {
-        const reportObj = JSON.parse(runnerResult.report);
-        reportObj.artifacts = runnerResult.artifacts;
-        runnerResult.report = JSON.stringify(reportObj);
+        // @ts-ignore - Regenerate the report, but tack on the artifacts.
+        runnerResult.lhr.artifacts = runnerResult.artifacts;
+        runnerResult.report = JSON.stringify(runnerResult.lhr);
       }
 
       return preprocessor.processForProto(runnerResult.report);
