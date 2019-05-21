@@ -5,7 +5,7 @@
  */
 'use strict';
 
-const processForProto = require('../../lib/proto-preprocessor').processForProto;
+const {processForProto} = require('../../lib/proto-preprocessor');
 
 /* eslint-env jest */
 describe('processing for proto', () => {
@@ -44,9 +44,9 @@ describe('processing for proto', () => {
         'onlyCategories': null,
       },
     };
-    const output = processForProto(JSON.stringify(input));
+    const output = processForProto(input);
 
-    expect(JSON.parse(output)).toMatchObject(expectation);
+    expect(output).toMatchObject(expectation);
   });
 
   it('cleans up default runtimeErrors', () => {
@@ -56,9 +56,9 @@ describe('processing for proto', () => {
       },
     };
 
-    const output = processForProto(JSON.stringify(input));
+    const output = processForProto(input);
 
-    expect(JSON.parse(output)).not.toHaveProperty('runtimeError');
+    expect(output).not.toHaveProperty('runtimeError');
   });
 
   it('non-default runtimeErrors are untouched', () => {
@@ -68,9 +68,9 @@ describe('processing for proto', () => {
       },
     };
 
-    const output = processForProto(JSON.stringify(input));
+    const output = processForProto(input);
 
-    expect(JSON.parse(output)).toMatchObject(input);
+    expect(output).toMatchObject(input);
   });
 
   it('cleans up audits', () => {
@@ -91,9 +91,9 @@ describe('processing for proto', () => {
         },
       },
     };
-    const output = processForProto(JSON.stringify(input));
+    const output = processForProto(input);
 
-    expect(JSON.parse(output)).toMatchObject(expectation);
+    expect(output).toMatchObject(expectation);
   });
 
 
@@ -108,9 +108,9 @@ describe('processing for proto', () => {
     const expectation = {
       'i18n': {},
     };
-    const output = processForProto(JSON.stringify(input));
+    const output = processForProto(input);
 
-    expect(JSON.parse(output)).toMatchObject(expectation);
+    expect(output).toMatchObject(expectation);
   });
 
   it('removes empty strings', () => {
@@ -151,8 +151,8 @@ describe('processing for proto', () => {
         ],
       },
     };
-    const output = processForProto(JSON.stringify(input));
+    const output = processForProto(input);
 
-    expect(JSON.parse(output)).toMatchObject(expectation);
+    expect(output).toMatchObject(expectation);
   });
 });
