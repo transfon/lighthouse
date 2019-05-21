@@ -441,7 +441,7 @@ describe('GatherRunner', function() {
       passConfig,
       settings,
       LighthouseRunWarnings: [],
-      baseArtifacts: await GatherRunner.initializeBaseArtifacts({driver, settings, requestedUrl})
+      baseArtifacts: await GatherRunner.initializeBaseArtifacts({driver, settings, requestedUrl}),
     };
 
     const {artifacts} = await GatherRunner.runPass(passContext);
@@ -476,7 +476,7 @@ describe('GatherRunner', function() {
       passConfig,
       settings,
       LighthouseRunWarnings: [],
-      baseArtifacts: await GatherRunner.initializeBaseArtifacts({driver, settings, requestedUrl})
+      baseArtifacts: await GatherRunner.initializeBaseArtifacts({driver, settings, requestedUrl}),
     };
 
     const {artifacts} = await GatherRunner.runPass(passContext);
