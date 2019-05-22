@@ -18,6 +18,7 @@
     "clients/**/*.js",
     "build/**/*.js",
     "./types/**/*.d.ts",
+    "*.js",
   ],
   "exclude": [
     "lighthouse-core/test/**/*.js",
