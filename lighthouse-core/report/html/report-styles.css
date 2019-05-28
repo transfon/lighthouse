@@ -1094,7 +1094,7 @@
   bottom: 0px;
   display: block;
   z-index: 100;
-  box-shadow: 0 0 4px rgba(0,0,0,.2);
+  /*box-shadow: 0 0 4px rgba(0,0,0,.2);*/
   border-radius: 25%;
 }
 .lh-category .lh-gauge__wrapper--plugin .lh-gauge__svg-wrapper::before {
