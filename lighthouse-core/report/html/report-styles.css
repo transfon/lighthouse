@@ -1083,8 +1083,8 @@
 .lh-gauge__wrapper--plugin .lh-gauge__svg-wrapper::before {
   width: var(--plugin-badge-size);
   height: var(--plugin-badge-size);
-  background-color: var(--plugin-badge-bg);
-  background-image: var(--plugin-icon-url);
+/*  background-color: var(--plugin-badge-bg);
+  background-image: var(--plugin-icon-url);*/
   background-repeat: no-repeat;
   background-size: var(--plugin-icon-size);
   background-position: 58% 50%;
