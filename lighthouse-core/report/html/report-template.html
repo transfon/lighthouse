@@ -47,6 +47,7 @@ limitations under the License.
       // is in the document.
       const features = new ReportUIFeatures(dom);
       features.initFeatures(window.__LIGHTHOUSE_JSON__);
+      features.expandAllDetails();
     }
     window.addEventListener('DOMContentLoaded', __initLighthouseReport__);
 
